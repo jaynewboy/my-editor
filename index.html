@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一米阳光AI 励志图文排版助手 - 私人定制版</title>
+    <title>一米阳光AI 励志图文排版助手 - 旗舰优化版</title>
     <!-- 核心依赖 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -87,7 +87,7 @@
         // 内置配置
         const CONFIG = {
             WORKER_URL: 'https://ai-editor-api.lukinzpkjstk.workers.dev/',
-            ACCESS_KEY: '8888' // 您可以根据需要修改此访问口令
+            DEFAULT_KEY: '8888' // 默认口令
         };
 
         // 图标组件
@@ -120,19 +120,32 @@
 
             const handleLogin = (e) => {
                 e.preventDefault();
-                if (password === CONFIG.ACCESS_KEY) {
+                // 前端先做基本格式检查，实际验证在 Worker
+                if (password.length > 0) {
                     setIsAuthorized(true);
                     sessionStorage.setItem('is_auth', 'true');
-                } else {
-                    alert('口令错误，请重新输入');
-                    setPassword('');
+                    sessionStorage.setItem('auth_key', password);
                 }
             };
 
             const generateArtical = async () => {
+                const authKey = sessionStorage.getItem('auth_key') || password;
                 setLoading(true);
+                
                 try {
-                    const res = await fetch(`${CONFIG.WORKER_URL.replace(/\/$/, '')}/api/generate_article`);
+                    const res = await fetch(`${CONFIG.WORKER_URL.replace(/\/$/, '')}/api/generate_article`, {
+                        headers: {
+                            'X-Access-Key': authKey
+                        }
+                    });
+                    
+                    if (res.status === 401) {
+                        alert('访问口令无效，请重新登录');
+                        setIsAuthorized(false);
+                        sessionStorage.clear();
+                        return;
+                    }
+
                     if (!res.ok) throw new Error('网络请求失败');
                     const json = await res.json();
                     
@@ -141,27 +154,21 @@
                             <!-- 文章头部 -->
                             <section style="text-align: center; margin-bottom: 40px;">
                                 <p style="font-size: 12px; color: #6366f1; letter-spacing: 4px; margin-bottom: 10px; font-weight: bold;">阳光 · 励志 · 向上</p>
-                                <h1 style="font-family: 'Noto Serif SC', serif; font-weight: bold; font-size: 24px; color: #1e293b; line-height: 1.5; padding: 0 10px; margin: 0;">${json.title}</h1>
+                                <h1 style="font-family: 'Noto Serif SC', serif; font-weight: bold; font-size: 24px; color: #1e293b; line-height: 1.5; padding: 0 10px; margin: 0; text-align: center;">${json.title}</h1>
                                 <section style="width: 40px; height: 3px; background: #6366f1; margin: 20px auto; border-radius: 2px;"></section>
                             </section>
 
                             ${json.data.map((item, idx) => `
-                                <section style="margin-bottom: 50px;">
-                                    <!-- 段落序号 -->
-                                    <section style="display: flex; align-items: center; margin-bottom: 25px;">
-                                        <section style="background: #6366f1; color: #fff; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; font-family: 'Noto Serif SC', serif;">${idx + 1}</section>
-                                        <section style="height: 1px; flex: 1; background: linear-gradient(to right, #f1f5f9, transparent); margin-left: 15px;"></section>
-                                    </section>
-                                    
-                                    <!-- 正文内容 -->
-                                    <section style="line-height: 2; text-align: justify; margin-bottom: 30px; color: #334155; font-size: 16px; letter-spacing: 0.1em;">
+                                <section style="margin-bottom: 50px; text-align: center;">
+                                    <!-- 移除了段落序号，正文居中 -->
+                                    <section style="line-height: 2; text-align: center; margin-bottom: 30px; color: #334155; font-size: 16px; letter-spacing: 0.1em; padding: 0 10px;">
                                         ${item.text.replace(/\n/g, '<br/>')}
                                     </section>
 
                                     <!-- 配图 -->
-                                    <section style="margin: 30px 0;">
+                                    <section style="margin: 30px 0; text-align: center;">
                                         <img src="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=800&q=80&sig=${idx}_${Date.now()}" 
-                                             style="width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.12); display: block;" 
+                                             style="width: 100%; max-width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.12); display: inline-block;" 
                                              alt="阳光励志配图" />
                                     </section>
                                 </section>
@@ -169,8 +176,8 @@
 
                             <!-- 文章封底 -->
                             <section style="text-align: center; margin-top: 60px; padding: 50px 0; border-top: 1px solid #f1f5f9;">
-                                <p style="font-family: 'Noto Serif SC', serif; color: #1e293b; font-size: 20px; font-weight: bold; margin-bottom: 12px;">追光而行，不负韶华</p>
-                                <p style="font-size: 12px; color: #94a3b8; letter-spacing: 3px;">—— 感谢阅读 · 愿温暖常在 ——</p>
+                                <p style="font-family: 'Noto Serif SC', serif; color: #1e293b; font-size: 20px; font-weight: bold; margin-bottom: 12px; text-align: center;">追光而行，不负韶华</p>
+                                <p style="font-size: 12px; color: #94a3b8; letter-spacing: 3px; text-align: center;">—— 感谢阅读 · 愿温暖常在 ——</p>
                             </section>
                         </div>
                     `;
@@ -178,7 +185,7 @@
                     setArticleHtml(html);
                 } catch (e) {
                     console.error(e);
-                    setArticleHtml(`<div style="color: #ef4444; text-align: center; padding: 40px;">⚠️ 生成出错，请检查 Worker 配置或网络。</div>`);
+                    setArticleHtml(`<div style="color: #ef4444; text-align: center; padding: 40px;">⚠️ 生成出错，可能是口令错误或接口连接失败。</div>`);
                 } finally {
                     setLoading(false);
                 }
@@ -211,22 +218,24 @@
                                     <Icon name="lock" className="w-8 h-8" />
                                 </div>
                                 <h1 className="text-2xl font-bold text-slate-800">私人创作助手</h1>
-                                <p className="text-slate-400 text-sm mt-2 font-medium uppercase tracking-widest">Access Protected</p>
+                                <p className="text-slate-400 text-sm mt-2 font-medium uppercase tracking-widest text-center">API 级加密访问</p>
                             </div>
                             <form onSubmit={handleLogin} className="space-y-4">
                                 <div>
-                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">请输入验证口令</label>
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">请输入 API 访问口令</label>
                                     <input 
                                         type="password" 
                                         className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all text-center tracking-[0.5em] font-bold"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="••••"
                                         autoFocus
                                     />
                                 </div>
                                 <button className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all">
-                                    立即开启
+                                    授权并进入
                                 </button>
+                                <p className="text-[10px] text-slate-300 text-center">口令将用于后续 API 请求鉴权</p>
                             </form>
                         </div>
                     </div>
@@ -249,8 +258,11 @@
 
                         <div className="space-y-8">
                             <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
-                                <p className="text-[11px] text-indigo-600 font-bold uppercase mb-1">后端状态</p>
-                                <p className="text-[10px] text-indigo-400 leading-relaxed break-all">已连接至专用 API 节点</p>
+                                <p className="text-[11px] text-indigo-600 font-bold uppercase mb-1 flex justify-between">
+                                    <span>安全状态</span>
+                                    <span className="text-green-500 flex items-center gap-1"><i className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></i> 已鉴权</span>
+                                </p>
+                                <p className="text-[10px] text-indigo-400 leading-relaxed">口令已挂载到 API Header</p>
                             </div>
 
                             <button 
@@ -272,30 +284,29 @@
                             </button>
                             
                             <button 
-                                onClick={() => { setIsAuthorized(false); sessionStorage.removeItem('is_auth'); }}
+                                onClick={() => { setIsAuthorized(false); sessionStorage.clear(); }}
                                 className="w-full py-3 text-slate-400 text-xs font-bold hover:text-slate-600 transition-colors"
                             >
-                                退出登录
+                                退出并撤销授权
                             </button>
                         </div>
 
                         <div className="mt-auto bg-slate-50 p-5 rounded-2xl border border-slate-100">
                             <h4 className="text-[11px] font-bold text-slate-500 mb-2 flex items-center gap-2 uppercase tracking-wider">
                                 <Icon name="check" className="w-3.5 h-3.5 text-indigo-500" />
-                                系统就绪
+                                排版已就绪
                             </h4>
                             <ul className="text-[11px] text-slate-400 space-y-1.5 font-medium">
-                                <li>• 8段式励志内容生成</li>
+                                <li>• 无序号极简分段</li>
+                                <li>• 全文居中优雅对齐</li>
                                 <li>• 16:9 比例高清插图</li>
-                                <li>• 适配微信公众号排版</li>
-                                <li>• 支持内联样式一键复制</li>
+                                <li>• API 级口令验证保护</li>
                             </ul>
                         </div>
                     </div>
 
                     {/* 预览区 */}
                     <div className="flex-1 flex flex-col items-center justify-center relative p-8">
-                        {/* 顶栏操作 */}
                         <div className="absolute top-8 right-12 flex gap-4">
                             <button 
                                 onClick={handleCopy} 
@@ -341,9 +352,8 @@
                             </div>
                         </div>
 
-                        {/* 底部提示 */}
                         <div className="mt-8 text-[11px] text-slate-400 font-medium bg-white/50 px-4 py-1 rounded-full border border-slate-200/50">
-                            温馨提示：复制后直接在公众号后台粘贴即可，所有格式将完美保留
+                            提示：复制后在公众号后台 Command+V 粘贴即可保持居中排版
                         </div>
                     </div>
                 </div>
