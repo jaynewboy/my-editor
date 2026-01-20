@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一米阳光AI 励志文案排版神器 - 2.0 旗舰版</title>
-    <!-- 核心依赖 -->
+    <title>AI 励志图文排版助手</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -12,55 +11,12 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
-        
-        :root {
-            --primary: #c084fc;
-            --bg-editor: #ffffff;
-            --bg-frame: #f8fafc;
-        }
-
-        body { font-family: 'Noto Sans SC', sans-serif; background-color: #f0f2f5; }
-        
-        /* 编辑器核心样式 */
-        .editor-canvas { 
-            min-height: 1200px; 
-            outline: none; 
-            transition: all 0.3s;
-        }
-        
-        /* 微信文章细节渲染 */
-        .wx-article {
-            line-height: 1.8;
-            letter-spacing: 0.1em;
-            word-wrap: break-word;
-            color: #3f3f3f;
-            font-size: 16px;
-        }
-
-        /* 隐藏滚动条 */
+        body { font-family: 'Noto Sans SC', sans-serif; background: #f8fafc; color: #1e293b; }
+        .wx-article { line-height: 1.8; letter-spacing: 0.1em; color: #3f3f3f; font-size: 16px; }
+        .phone-shell { width: 390px; height: 844px; background: white; border: 12px solid #1a1a1a; border-radius: 48px; box-shadow: 0 50px 100px -20px rgba(0,0,0,0.3); position: relative; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* 模拟手机外壳 */
-        .phone-mockup {
-            width: 414px;
-            height: 850px;
-            background: white;
-            border: 12px solid #222;
-            border-radius: 40px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 50px 100px -20px rgba(0,0,0,0.25);
-        }
-
-        @keyframes pulse-gold {
-            0% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(192, 132, 252, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0); }
-        }
-        .ai-btn-premium {
-            animation: pulse-gold 2s infinite;
-        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-content { animation: slideUp 0.8s ease forwards; }
     </style>
 </head>
 <body>
@@ -70,184 +26,137 @@
         const { useState, useEffect, useRef } = React;
 
         const App = () => {
-            const [content, setContent] = useState('');
             const [loading, setLoading] = useState(false);
-            const [activeTab, setActiveTab] = useState('templates');
             const [workerUrl, setWorkerUrl] = useState(localStorage.getItem('worker_url') || '');
             const editorRef = useRef(null);
 
             useEffect(() => {
                 if (window.lucide) window.lucide.createIcons();
-            }, [activeTab, content]);
+            }, [loading]);
 
-            // 预设高规格排版组件
-            const modules = {
-                decoration: [
-                    {
-                        name: '顶部艺术栏',
-                        html: `<section style="margin: 0 auto 30px; text-align: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
-                                <p style="font-size: 12px; color: #c084fc; letter-spacing: 5px; text-transform: uppercase;">Aspiration & Light</p>
-                                <p style="font-size: 14px; color: #94a3b8; margin-top: 5px;">每一个平凡的日子，都值得熠熠生辉</p>
-                              </section>`
-                    }
-                ]
-            };
-
-            // AI 深度创作逻辑
-            const generateDeepContent = async () => {
-                if (!workerUrl) return alert('请先设置您的 Cloudflare Worker 访问地址');
+            const generateArtical = async () => {
+                if (!workerUrl) return alert('请先配置 Worker URL');
                 setLoading(true);
-                
                 try {
-                    // 调用 Worker 接口
                     const res = await fetch(`${workerUrl.replace(/\/$/, '')}/api/generate_article`);
-                    const data = await res.json();
+                    const json = await res.json();
                     
-                    if (data.error) throw new Error(data.error);
+                    const html = `
+                        <section style="padding: 20px 0;">
+                            <!-- 顶部装饰 -->
+                            <section style="text-align: center; margin-bottom: 40px;">
+                                <p style="font-size: 12px; color: #6366f1; letter-spacing: 4px; margin-bottom: 10px;">MORNING INSPIRATION</p>
+                                <h1 style="font-family: 'Noto Serif SC'; font-weight: bold; font-size: 24px; color: #1e293b; line-height: 1.4;">${json.title}</h1>
+                                <section style="width: 40px; height: 2px; background: #6366f1; margin: 20px auto;"></section>
+                            </section>
 
-                    // 将生成的内容转化为极致排版 HTML
-                    const paragraphs = data.paragraphs.map((p, idx) => `
-                        <section style="margin-bottom: 40px; padding: 0 10px;">
-                            <section style="display: flex; align-items: baseline; margin-bottom: 15px;">
-                                <span style="font-size: 32px; font-weight: bold; color: #c084fc; font-family: 'Noto Serif SC'; line-height: 1;">0${idx + 1}</span>
-                                <section style="margin-left: 10px; flex: 1; border-bottom: 1px solid #f3e8ff;"></section>
-                            </section>
-                            <section style="line-height: 2; color: #334155; text-align: justify; font-size: 15px;">
-                                ${p.replace(/\n/g, '<br/>')}
-                            </section>
-                        </section>
-                    `).join('');
+                            ${json.data.map((item, idx) => `
+                                <section style="margin-bottom: 50px;">
+                                    <!-- 段落标题标识 -->
+                                    <section style="display: flex; align-items: center; margin-bottom: 20px;">
+                                        <section style="background: #6366f1; color: #fff; width: 24px; height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">${idx + 1}</section>
+                                        <section style="height: 1px; flex: 1; background: #f1f5f9; margin-left: 10px;"></section>
+                                    </section>
+                                    
+                                    <!-- 正文内容 -->
+                                    <section style="line-height: 2; text-align: justify; margin-bottom: 25px; color: #334155;">
+                                        ${item.text.replace(/\n/g, '<br/>')}
+                                    </section>
 
-                    const fullArticleHtml = `
-                        <section class="wx-article" style="animation: fadeIn 1s ease;">
-                            ${modules.decoration[0].html}
-                            <section style="margin: 40px 0; text-align: center;">
-                                <h1 style="font-size: 22px; font-weight: bold; color: #1e293b; line-height: 1.4; font-family: 'Noto Serif SC';">
-                                    ${data.title}
-                                </h1>
-                                <section style="width: 30px; height: 3px; background: #c084fc; margin: 20px auto;"></section>
-                            </section>
-                            ${paragraphs}
-                            <section style="margin-top: 50px; text-align: center; color: #94a3b8; font-size: 12px; letter-spacing: 2px;">
-                                —— 全文终 · 愿光指引你的方向 ——
+                                    <!-- 插图设计 -->
+                                    <section style="margin: 30px 0; position: relative;">
+                                        <img src="https://images.unsplash.com/photo-${Math.random().toString(36).substr(2, 9)}?auto=format&fit=crop&w=800&q=80&sig=${idx}&${item.keyword}" 
+                                             style="width: 100%; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: block;" 
+                                             alt="励志配图" />
+                                        <section style="position: absolute; bottom: -10px; right: 20px; background: #fff; padding: 5px 15px; border-radius: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-size: 10px; color: #94a3b8; font-style: italic;">
+                                            Focus on ${item.keyword}
+                                        </section>
+                                    </section>
+                                </section>
+                            `).join('')}
+
+                            <!-- 底部封底 -->
+                            <section style="text-align: center; margin-top: 60px; padding: 40px 0; border-top: 1px dashed #e2e8f0;">
+                                <p style="font-family: 'Noto Serif SC'; color: #6366f1; font-size: 18px; margin-bottom: 10px;">愿你历经千帆，归来仍是少年</p>
+                                <p style="font-size: 12px; color: #94a3b8; letter-spacing: 2px;">—— 点击上方关注，每天一点正能量 ——</p>
                             </section>
                         </section>
                     `;
-
-                    editorRef.current.innerHTML = fullArticleHtml;
-                    setContent(fullArticleHtml);
+                    
+                    editorRef.current.innerHTML = html;
                 } catch (e) {
-                    alert('创作失败：' + e.message);
+                    alert('生成失败: ' + e.message);
                 } finally {
                     setLoading(false);
                 }
             };
 
-            const copyToWX = () => {
+            const handleCopy = () => {
                 const range = document.createRange();
                 range.selectNode(editorRef.current);
                 window.getSelection().removeAllRanges();
                 window.getSelection().addRange(range);
                 document.execCommand('copy');
-                window.getSelection().removeAllRanges();
-                
-                const toast = document.createElement('div');
-                toast.className = "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white px-8 py-4 rounded-2xl shadow-2xl z-50 text-center";
-                toast.innerHTML = "<div class='text-2xl mb-2'>✨</div>复制成功！<br/><span class='text-xs opacity-60'>请直接去公众号编辑器粘贴</span>";
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 2500);
+                alert('✨ 完美复制！请到公众号后台粘贴。');
             };
 
             return (
                 <div className="flex h-screen overflow-hidden">
-                    {/* 控制面板 */}
-                    <div className="w-96 bg-white border-r border-gray-100 flex flex-col shrink-0 shadow-2xl z-20">
-                        <div className="p-8">
-                            <div className="flex items-center gap-3 mb-8">
-                                <div className="w-10 h-10 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white shadow-lg">
-                                    <i data-lucide="sparkles" className="w-6 h-6"></i>
-                                </div>
-                                <div>
-                                    <h1 className="font-bold text-xl text-gray-800">创作智库</h1>
-                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest">AI Editorial Suite</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-6">
-                                <div>
-                                    <label className="text-xs font-bold text-gray-400 uppercase block mb-2">配置 Worker</label>
-                                    <input 
-                                        type="text" 
-                                        placeholder="https://..." 
-                                        className="w-full p-3 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-200 transition-all"
-                                        value={workerUrl}
-                                        onChange={(e) => {
-                                            setWorkerUrl(e.target.value);
-                                            localStorage.setItem('worker_url', e.target.value);
-                                        }}
-                                    />
-                                </div>
-
-                                <div className="pt-4">
-                                    <button 
-                                        onClick={generateDeepContent}
-                                        disabled={loading}
-                                        className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-bold flex flex-col items-center justify-center gap-1 hover:opacity-90 transition-all shadow-xl shadow-purple-100 ai-btn-premium disabled:grayscale"
-                                    >
-                                        {loading ? (
-                                            <i data-lucide="loader-2" className="w-6 h-6 animate-spin"></i>
-                                        ) : (
-                                            <React.Fragment>
-                                                <span className="text-lg flex items-center gap-2 italic font-serif"><i data-lucide="pen-tool" className="w-4 h-4"></i> 一键生成阳光美文</span>
-                                                <span className="text-[10px] opacity-70 font-normal">8段式 · 1200字 · 自动排版</span>
-                                            </React.Fragment>
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
+                    {/* 控制栏 */}
+                    <div className="w-80 bg-white border-r flex flex-col p-8 shrink-0 shadow-lg z-10">
+                        <div className="flex items-center gap-2 mb-10">
+                            <div className="p-2 bg-indigo-600 rounded-lg text-white"><i data-lucide="layout" className="w-6 h-6"></i></div>
+                            <h1 className="font-bold text-xl">视觉创作</h1>
                         </div>
 
-                        <div className="mt-auto p-8 border-t border-gray-50 bg-gray-50/50 text-[11px] text-gray-400 leading-relaxed">
-                            <p><strong>创作指南：</strong></p>
-                            <p>1. 填入您的 Worker 地址</p>
-                            <p>2. 点击生成按钮，AI 将调用 DeepSeek 进行创作</p>
-                            <p>3. 预览满意后，点击右侧“发布并复制”</p>
-                        </div>
-                    </div>
+                        <div className="space-y-6">
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">后端接口地址</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full p-3 bg-gray-50 border rounded-xl text-sm outline-none focus:border-indigo-500"
+                                    placeholder="https://..."
+                                    value={workerUrl}
+                                    onChange={(e) => { setWorkerUrl(e.target.value); localStorage.setItem('worker_url', e.target.value); }}
+                                />
+                            </div>
 
-                    {/* 预览工作区 */}
-                    <div className="flex-1 bg-slate-100 flex items-center justify-center p-12 overflow-y-auto no-scrollbar relative">
-                        {/* 顶部工具 */}
-                        <div className="absolute top-8 right-12 flex gap-4">
                             <button 
-                                onClick={copyToWX}
-                                className="px-8 py-3 bg-white text-gray-800 rounded-full font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2 border border-gray-100"
+                                onClick={generateArtical}
+                                disabled={loading}
+                                className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all disabled:bg-gray-300"
                             >
-                                <i data-lucide="clipboard-check" className="w-5 h-5 text-green-500"></i>
-                                完美复制到公众号
+                                {loading ? '正在绘制图文...' : 'AI 深度创作'}
                             </button>
                         </div>
 
-                        {/* 手机预览容器 */}
-                        <div className="phone-mockup shadow-2xl bg-white flex flex-col">
-                            {/* 状态栏模拟 */}
-                            <div className="h-10 w-full flex justify-between items-center px-8 shrink-0">
-                                <span className="text-xs font-bold">9:41</span>
-                                <div className="flex gap-1.5 items-center">
-                                    <div className="w-4 h-2 bg-black/20 rounded-full"></div>
-                                    <div className="w-4 h-4 bg-black rounded-full"></div>
-                                </div>
+                        <div className="mt-auto bg-indigo-50 p-4 rounded-xl">
+                            <h4 className="text-xs font-bold text-indigo-700 mb-1 flex items-center gap-1">
+                                <i data-lucide="info" className="w-3 h-3"></i> 提示
+                            </h4>
+                            <p className="text-[11px] text-indigo-600/70">图片根据 AI 关键词自动匹配，每次生成都是独一无二的视觉呈现。</p>
+                        </div>
+                    </div>
+
+                    {/* 手机预览区 */}
+                    <div className="flex-1 bg-gray-100 flex items-center justify-center relative p-10 overflow-hidden">
+                        <div className="absolute top-8 right-12">
+                            <button onClick={handleCopy} className="bg-white px-6 py-3 rounded-full shadow-lg font-bold flex items-center gap-2 hover:scale-105 transition-all">
+                                <i data-lucide="clipboard-copy" className="w-5 h-5 text-indigo-600"></i>
+                                发布并复制全文
+                            </button>
+                        </div>
+
+                        <div className="phone-shell flex flex-col">
+                            <div className="h-6 w-full flex justify-center mt-2">
+                                <div className="w-20 h-4 bg-black rounded-full"></div>
                             </div>
-                            
-                            {/* 内容滚动区 */}
-                            <div className="flex-1 overflow-y-auto p-6 no-scrollbar">
-                                <div 
-                                    ref={editorRef}
-                                    contentEditable 
-                                    className="editor-canvas wx-article"
-                                    spellCheck="false"
-                                >
-                                    {/* 这里将由 AI 填充 */}
+                            <div className="flex-1 overflow-y-auto px-6 py-4 no-scrollbar">
+                                <div ref={editorRef} className="wx-article animate-content" contentEditable spellCheck="false">
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-4 mt-20">
+                                        <i data-lucide="image-plus" className="w-12 h-12 opacity-20"></i>
+                                        <p className="text-sm">内容生成后将在此处完美呈现</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
