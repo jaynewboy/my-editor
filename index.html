@@ -4,74 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>一米阳光AI 励志图文排版助手 - 旗舰版</title>
-    <!-- 核心依赖 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- 必须引入 Babel 才能解析 JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
-        
-        body { 
-            font-family: 'Noto Sans SC', sans-serif; 
-            background: #f8fafc; 
-            color: #1e293b; 
-            margin: 0;
-            overflow: hidden;
-        }
-
-        /* 公众号文章渲染层级 */
-        .wx-article { 
-            line-height: 1.8; 
-            letter-spacing: 0.1em; 
-            color: #3f3f3f; 
-            font-size: 16px; 
-            word-break: break-all;
-        }
-
-        /* 手机模型装饰 */
-        .phone-shell { 
-            width: 390px; 
-            height: 844px; 
-            background: white; 
-            border: 12px solid #1a1a1a; 
-            border-radius: 48px; 
-            box-shadow: 0 50px 100px -20px rgba(0,0,0,0.25); 
-            position: relative; 
-            display: flex;
-            flex-direction: column;
-        }
-
+        body { font-family: 'Noto Sans SC', sans-serif; background: #f8fafc; color: #1e293b; margin: 0; overflow: hidden; }
+        .wx-article { line-height: 2; letter-spacing: 0.1em; color: #3f3f3f; font-size: 16px; text-align: center; }
+        .phone-shell { width: 390px; height: 844px; background: white; border: 12px solid #1a1a1a; border-radius: 48px; box-shadow: 0 50px 100px -20px rgba(0,0,0,0.25); position: relative; display: flex; flex-direction: column; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
         .animate-in { animation: fadeIn 0.8s ease-out forwards; }
-
-        /* 复制成功的提示框 */
-        .toast {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 16px 32px;
-            border-radius: 12px;
-            z-index: 100;
-            display: none;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            backdrop-filter: blur(8px);
-        }
-
-        .auth-overlay {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.9); color: white; padding: 16px 32px; border-radius: 12px; z-index: 100; display: none; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); backdrop-filter: blur(8px); }
+        .auth-overlay { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
     </style>
 </head>
 <body>
@@ -85,23 +31,18 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // 内置配置
         const CONFIG = {
             WORKER_URL: 'https://ai-editor-api.lukinzpkjstk.workers.dev/',
-            DEFAULT_KEY: '8888'
+    
         };
 
-        // 图标组件 (使用 Inline SVG 确保 React DOM 稳定性)
         const Icon = ({ name, className = "w-5 h-5" }) => {
             const icons = {
                 sun: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>,
-                pen: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>,
                 copy: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>,
-                sparkle: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/></svg>,
                 lock: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-                check: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 6 9 17l-5-5"/></svg>,
-                type: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>,
-                refresh: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                refresh: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>,
+                pen: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
             };
             return icons[name] || null;
         };
@@ -112,76 +53,71 @@
             const [loading, setLoading] = useState(false);
             const [articleHtml, setArticleHtml] = useState('');
             const [generatedTitle, setGeneratedTitle] = useState('');
-            const [errorMessage, setErrorMessage] = useState('');
             const editorRef = useRef(null);
 
-            const generateArtical = async (e) => {
-                if (e && e.preventDefault) e.preventDefault();
+            const generateArtical = async (isRetry = false) => {
                 const authKey = sessionStorage.getItem('auth_key') || password;
                 setLoading(true);
                 setArticleHtml('');
                 setGeneratedTitle('');
-                setErrorMessage('');
                 
                 try {
-                    // 时间戳 + 随机数，强制 Worker 穿透缓存并生成新内容
-                    const salt = Math.floor(Math.random() * 99999);
-                    const timestamp = Date.now();
-                    const apiUrl = `${CONFIG.WORKER_URL.replace(/\/$/, '')}/api/generate_article?nocache=true&salt=${salt}&t=${timestamp}`;
-                    
-                    const res = await fetch(apiUrl, { 
-                        headers: { 'X-Access-Key': authKey } 
+                    // 强制穿透缓存，nocache 参数告知 Worker 生成全新内容
+                    const res = await fetch(`${CONFIG.WORKER_URL}api/generate_article?nocache=true&t=${Date.now()}`, {
+                        headers: { 'X-Access-Key': authKey }
                     });
-                    const data = await res.json();
-
-                    if (!res.ok) {
-                        throw new Error(data.error || '请求失败，请检查口令或网络');
-                    }
                     
-                    setGeneratedTitle(data.title);
+                    if (!res.ok) throw new Error('授权失效或请求异常');
+                    const json = await res.json();
+                    
+                    setGeneratedTitle(json.title);
 
-                    // 每一轮生成使用一个全新的基础种子，确保 8 张图各不相同且不重复
-                    const baseSeed = Math.floor(Math.random() * 1000000);
+                    // 每一轮生成一个完全不同的图片基础偏移量
+                    const photoBaseId = Math.floor(Math.random() * 800);
 
                     const html = `
-                        <div class="wx-article-container" style="padding: 10px 0;">
+                        <div class="wx-article-container" style="padding: 10px 0; text-align: center;">
                             <section style="text-align: center; margin-bottom: 40px;">
-                                <p style="font-size: 12px; color: #6366f1; letter-spacing: 4px; margin-bottom: 10px; font-weight: bold;">每一天 · 都是 · 新的起点</p>
-                                <h1 style="font-family: 'Noto Serif SC', serif; font-weight: bold; font-size: 24px; color: #1e293b; line-height: 1.5; padding: 0 10px; margin: 0; text-align: center;">${data.title}</h1>
+                                <p style="font-size: 12px; color: #6366f1; letter-spacing: 4px; margin-bottom: 10px; font-weight: bold;">每一天 · 都是 · 新的起航</p>
+                                <h1 style="font-family: 'Noto Serif SC', serif; font-weight: bold; font-size: 24px; color: #1e293b; line-height: 1.5; padding: 0 10px; margin: 0; text-align: center;">${json.title}</h1>
                                 <section style="width: 40px; height: 3px; background: #6366f1; margin: 20px auto; border-radius: 2px;"></section>
                             </section>
-                            ${data.data.map((item, idx) => {
-                                // 强制唯一性：baseSeed(随机) + idx(段落偏移)
-                                const uniqueLock = baseSeed + idx;
-                                // 使用多重标签过滤，确保图片质量
-                                const keyword = (item.keyword || 'nature').split(' ')[0];
-                                const imgSrc = `https://loremflickr.com/800/450/nature,inspiration,${keyword}/all?lock=${uniqueLock}`;
+
+                            ${json.data.map((item, idx) => {
+                                // 核心修复：使用 Picsum ID 模式，强制 8 张图片物理地址完全不同
+                                const photoId = photoBaseId + (idx * 7); 
+                                const imgSrc = `https://picsum.photos/id/${photoId}/800/450`;
                                 
                                 return `
                                     <section style="margin-bottom: 50px; text-align: center;">
-                                        <section style="line-height: 2; text-align: center; margin-bottom: 30px; color: #334155; font-size: 16px; letter-spacing: 0.1em; padding: 0 15px;">
+                                        <section style="line-height: 2.2; text-align: center; margin-bottom: 30px; color: #334155; font-size: 16px; letter-spacing: 0.1em; padding: 0 15px;">
                                             ${item.text.replace(/\n/g, '<br/>')}
                                         </section>
                                         <section style="margin: 30px 0; text-align: center;">
                                             <img src="${imgSrc}" 
-                                                 style="width: 100%; max-width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); display: inline-block;" 
-                                                 onerror="this.src='https://images.unsplash.com/featured/800x450?nature,sky&sig=${uniqueLock}'" />
+                                                 style="width: 100%; max-width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); display: inline-block;" 
+                                                 alt="励志配图" 
+                                                 onerror="this.src='https://loremflickr.com/800/450/nature?lock=${photoId}'" />
                                         </section>
                                     </section>
                                 `;
                             }).join('')}
+
+                            <section style="text-align: center; margin-top: 60px; padding: 50px 0; border-top: 1px solid #f1f5f9;">
+                                <p style="font-family: 'Noto Serif SC', serif; color: #1e293b; font-size: 18px; font-weight: bold; margin-bottom: 12px;">追光而行，不负韶华</p>
+                                <p style="font-size: 11px; color: #94a3b8; letter-spacing: 3px;">—— 感谢阅读 · 愿温暖常在 ——</p>
+                            </section>
                         </div>
                     `;
                     setArticleHtml(html);
                 } catch (e) {
-                    setErrorMessage(e.message);
+                    setArticleHtml(`<div style="color: #ef4444; text-align: center; padding: 40px;">⚠️ 创作遇到阻碍，请重试。<br/><small>${e.message}</small></div>`);
                 } finally {
                     setLoading(false);
                 }
             };
 
             const handleCopy = () => {
-                if (!editorRef.current) return;
                 const range = document.createRange();
                 range.selectNode(editorRef.current);
                 const selection = window.getSelection();
@@ -191,27 +127,18 @@
                 selection.removeAllRanges();
                 const toast = document.getElementById('copyToast');
                 toast.style.display = 'block';
-                setTimeout(() => toast.style.display = 'none', 2500);
+                setTimeout(() => { toast.style.display = 'none'; }, 2500);
             };
 
             if (!isAuthorized) {
                 return (
                     <div className="h-screen w-screen flex items-center justify-center auth-overlay p-6">
-                        <div className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md">
-                            <form onSubmit={(e) => { 
-                                e.preventDefault(); 
-                                if(password === CONFIG.DEFAULT_KEY) {
-                                    setIsAuthorized(true); 
-                                    sessionStorage.setItem('is_auth', 'true'); 
-                                    sessionStorage.setItem('auth_key', password); 
-                                } else {
-                                    alert('口令错误');
-                                }
-                            }} className="space-y-4 text-center">
+                        <div className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md animate-in">
+                            <form onSubmit={(e) => { e.preventDefault(); if(password === CONFIG.DEFAULT_KEY) { setIsAuthorized(true); sessionStorage.setItem('is_auth', 'true'); sessionStorage.setItem('auth_key', password); } else { alert('口令错误'); } }} className="space-y-4 text-center">
                                 <Icon name="lock" className="w-12 h-12 text-indigo-600 mx-auto mb-4" />
-                                <h1 className="text-2xl font-bold">验证开启灵感</h1>
-                                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-4 border rounded-2xl text-center tracking-widest text-xl font-bold outline-none focus:ring-2 focus:ring-indigo-200" placeholder="••••" />
-                                <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700">进入系统</button>
+                                <h1 className="text-2xl font-bold">验证开启创作</h1>
+                                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-4 border rounded-2xl text-center text-xl font-bold outline-none focus:ring-2 focus:ring-indigo-200" placeholder="••••" autoFocus />
+                                <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all">进入系统</button>
                             </form>
                         </div>
                     </div>
@@ -220,76 +147,31 @@
 
             return (
                 <div className="flex h-screen bg-slate-50">
-                    <div className="w-80 bg-white border-r p-8 flex flex-col shrink-0 overflow-y-auto no-scrollbar shadow-sm z-10">
-                        <div className="flex items-center gap-3 mb-10">
-                            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
-                                <Icon name="sun" />
-                            </div>
-                            <div>
-                                <h1 className="font-bold"一米阳光创作台</h1>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest">Inspiration Studio</p>
-                            </div>
-                        </div>
+                    <div className="w-80 bg-white border-r p-8 flex flex-col shrink-0 shadow-sm z-10">
+                        <div className="flex items-center gap-3 mb-10"><div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white"><Icon name="sun" /></div><div><h1 className="font-bold">向阳创作台</h1><p className="text-[10px] text-slate-400">Inspiration Studio</p></div></div>
                         <div className="space-y-6">
                             <div className="p-4 bg-slate-50 rounded-2xl border">
-                                <h4 className="text-[11px] font-bold text-slate-500 mb-2 uppercase">生成的标题</h4>
-                                <div className="bg-white p-3 rounded-lg border text-sm font-bold min-h-[60px] flex items-center justify-center text-center">
-                                    {generatedTitle || '等待生成...'}
-                                </div>
+                                <h4 className="text-[11px] font-bold text-slate-500 mb-2 uppercase">标题预览</h4>
+                                <div className="bg-white p-3 rounded-lg border text-sm font-bold min-h-[60px] flex items-center justify-center text-center">{generatedTitle || '等待生成...'}</div>
                             </div>
-                            <button 
-                                onClick={generateArtical} 
-                                disabled={loading} 
-                                className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-all hover:bg-indigo-700 active:scale-95"
-                            >
-                                {loading ? '正在绘制画卷...' : (
-                                    <React.Fragment>
-                                        <Icon name={articleHtml ? "refresh" : "pen"} />
-                                        {articleHtml ? "重新创作内容" : "开始深度创作"}
-                                    </React.Fragment>
-                                )}
+                            <button onClick={() => generateArtical(true)} disabled={loading} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-all hover:bg-indigo-700 active:scale-95">
+                                {loading ? '正在绘制画卷...' : <><Icon name={articleHtml ? "refresh" : "pen"} />{articleHtml ? "重新创作" : "开始深度创作"}</>}
                             </button>
                         </div>
                     </div>
                     <div className="flex-1 flex flex-col items-center justify-center relative p-8">
-                        <div className="absolute top-8 right-12 flex gap-3">
-                            {articleHtml && (
-                                <button 
-                                    onClick={handleCopy} 
-                                    className="bg-indigo-600 px-8 py-3.5 rounded-full shadow-lg font-bold text-white flex items-center gap-2 hover:bg-indigo-700 active:scale-95 transition-all"
-                                >
-                                    <Icon name="copy" />复制到公众号
-                                </button>
-                            )}
-                        </div>
+                        {articleHtml && !loading && <div className="absolute top-8 right-12 flex gap-3"><button onClick={handleCopy} className="bg-indigo-600 px-8 py-3.5 rounded-full shadow-lg font-bold text-white flex items-center gap-2 hover:bg-indigo-700 active:scale-95 transition-all"><Icon name="copy" />复制全文到后台</button></div>}
                         <div className="phone-shell">
-                            <div className="h-6 w-full flex justify-center mt-2 shrink-0">
-                                <div className="w-16 h-4 bg-slate-900 rounded-full"></div>
-                            </div>
+                            <div className="h-6 w-full flex justify-center mt-2 shrink-0"><div className="w-16 h-4 bg-slate-900 rounded-full"></div></div>
                             <div className="flex-1 overflow-y-auto px-8 py-6 no-scrollbar bg-white">
-                                {errorMessage ? (
-                                    <div className="text-center text-red-500 mt-20 p-6 bg-red-50 rounded-xl border border-red-100">
-                                        <p className="font-bold mb-2">服务暂时不可用</p>
-                                        <p className="text-xs">{errorMessage}</p>
-                                        <button onClick={generateArtical} className="mt-4 text-xs font-bold text-indigo-600 underline">重试一次</button>
-                                    </div>
-                                ) : (
-                                    articleHtml ? (
-                                        <div ref={editorRef} className="animate-in wx-article" dangerouslySetInnerHTML={{ __html: articleHtml }} />
-                                    ) : (
-                                        <div className="h-full flex flex-col items-center justify-center text-slate-300 mt-40">
-                                            <Icon name="sparkle" className="w-20 h-20 opacity-20 mb-6 animate-pulse" />
-                                            <p className="text-sm font-medium opacity-50">开启属于您的阳光篇章</p>
-                                        </div>
-                                    )
-                                )}
+                                {articleHtml ? <div ref={editorRef} className="animate-in wx-article" dangerouslySetInnerHTML={{ __html: articleHtml }} /> :
+                                <div className="h-full flex flex-col items-center justify-center text-slate-300 mt-40"><Icon name="refresh" className="w-20 h-20 opacity-20 mb-6 animate-spin-slow" /><p className="text-sm font-medium opacity-50 text-center">点击左侧“开始创作”按钮<br/>开启属于您的励志篇章</p></div>}
                             </div>
                         </div>
                     </div>
                 </div>
             );
         };
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
