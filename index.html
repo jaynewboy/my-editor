@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一米阳光AI 励志文案排版神器 - 2.0 旗舰版</title>
+    <!-- 核心依赖 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+        
+        :root {
+            --primary: #c084fc;
+            --bg-editor: #ffffff;
+            --bg-frame: #f8fafc;
+        }
+
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #f0f2f5; }
+        
+        /* 编辑器核心样式 */
+        .editor-canvas { 
+            min-height: 1200px; 
+            outline: none; 
+            transition: all 0.3s;
+        }
+        
+        /* 微信文章细节渲染 */
+        .wx-article {
+            line-height: 1.8;
+            letter-spacing: 0.1em;
+            word-wrap: break-word;
+            color: #3f3f3f;
+            font-size: 16px;
+        }
+
+        /* 隐藏滚动条 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 模拟手机外壳 */
+        .phone-mockup {
+            width: 414px;
+            height: 850px;
+            background: white;
+            border: 12px solid #222;
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 50px 100px -20px rgba(0,0,0,0.25);
+        }
+
+        @keyframes pulse-gold {
+            0% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(192, 132, 252, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0); }
+        }
+        .ai-btn-premium {
+            animation: pulse-gold 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const App = () => {
+            const [content, setContent] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [activeTab, setActiveTab] = useState('templates');
+            const [workerUrl, setWorkerUrl] = useState(localStorage.getItem('worker_url') || '');
+            const editorRef = useRef(null);
+
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [activeTab, content]);
+
+            // 预设高规格排版组件
+            const modules = {
+                decoration: [
+                    {
+                        name: '顶部艺术栏',
+                        html: `<section style="margin: 0 auto 30px; text-align: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
+                                <p style="font-size: 12px; color: #c084fc; letter-spacing: 5px; text-transform: uppercase;">Aspiration & Light</p>
+                                <p style="font-size: 14px; color: #94a3b8; margin-top: 5px;">每一个平凡的日子，都值得熠熠生辉</p>
+                              </section>`
+                    }
+                ]
+            };
+
+            // AI 深度创作逻辑
+            const generateDeepContent = async () => {
+                if (!workerUrl) return alert('请先设置您的 Cloudflare Worker 访问地址');
+                setLoading(true);
+                
+                try {
+                    // 调用 Worker 接口
+                    const res = await fetch(`${workerUrl.replace(/\/$/, '')}/api/generate_article`);
+                    const data = await res.json();
+                    
+                    if (data.error) throw new Error(data.error);
+
+                    // 将生成的内容转化为极致排版 HTML
+                    const paragraphs = data.paragraphs.map((p, idx) => `
+                        <section style="margin-bottom: 40px; padding: 0 10px;">
+                            <section style="display: flex; align-items: baseline; margin-bottom: 15px;">
+                                <span style="font-size: 32px; font-weight: bold; color: #c084fc; font-family: 'Noto Serif SC'; line-height: 1;">0${idx + 1}</span>
+                                <section style="margin-left: 10px; flex: 1; border-bottom: 1px solid #f3e8ff;"></section>
+                            </section>
+                            <section style="line-height: 2; color: #334155; text-align: justify; font-size: 15px;">
+                                ${p.replace(/\n/g, '<br/>')}
+                            </section>
+                        </section>
+                    `).join('');
+
+                    const fullArticleHtml = `
+                        <section class="wx-article" style="animation: fadeIn 1s ease;">
+                            ${modules.decoration[0].html}
+                            <section style="margin: 40px 0; text-align: center;">
+                                <h1 style="font-size: 22px; font-weight: bold; color: #1e293b; line-height: 1.4; font-family: 'Noto Serif SC';">
+                                    ${data.title}
+                                </h1>
+                                <section style="width: 30px; height: 3px; background: #c084fc; margin: 20px auto;"></section>
+                            </section>
+                            ${paragraphs}
+                            <section style="margin-top: 50px; text-align: center; color: #94a3b8; font-size: 12px; letter-spacing: 2px;">
+                                —— 全文终 · 愿光指引你的方向 ——
+                            </section>
+                        </section>
+                    `;
+
+                    editorRef.current.innerHTML = fullArticleHtml;
+                    setContent(fullArticleHtml);
+                } catch (e) {
+                    alert('创作失败：' + e.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const copyToWX = () => {
+                const range = document.createRange();
+                range.selectNode(editorRef.current);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                
+                const toast = document.createElement('div');
+                toast.className = "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white px-8 py-4 rounded-2xl shadow-2xl z-50 text-center";
+                toast.innerHTML = "<div class='text-2xl mb-2'>✨</div>复制成功！<br/><span class='text-xs opacity-60'>请直接去公众号编辑器粘贴</span>";
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2500);
+            };
+
+            return (
+                <div className="flex h-screen overflow-hidden">
+                    {/* 控制面板 */}
+                    <div className="w-96 bg-white border-r border-gray-100 flex flex-col shrink-0 shadow-2xl z-20">
+                        <div className="p-8">
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="w-10 h-10 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white shadow-lg">
+                                    <i data-lucide="sparkles" className="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h1 className="font-bold text-xl text-gray-800">创作智库</h1>
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest">AI Editorial Suite</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="text-xs font-bold text-gray-400 uppercase block mb-2">配置 Worker</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="https://..." 
+                                        className="w-full p-3 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-200 transition-all"
+                                        value={workerUrl}
+                                        onChange={(e) => {
+                                            setWorkerUrl(e.target.value);
+                                            localStorage.setItem('worker_url', e.target.value);
+                                        }}
+                                    />
+                                </div>
+
+                                <div className="pt-4">
+                                    <button 
+                                        onClick={generateDeepContent}
+                                        disabled={loading}
+                                        className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-bold flex flex-col items-center justify-center gap-1 hover:opacity-90 transition-all shadow-xl shadow-purple-100 ai-btn-premium disabled:grayscale"
+                                    >
+                                        {loading ? (
+                                            <i data-lucide="loader-2" className="w-6 h-6 animate-spin"></i>
+                                        ) : (
+                                            <React.Fragment>
+                                                <span className="text-lg flex items-center gap-2 italic font-serif"><i data-lucide="pen-tool" className="w-4 h-4"></i> 一键生成阳光美文</span>
+                                                <span className="text-[10px] opacity-70 font-normal">8段式 · 1200字 · 自动排版</span>
+                                            </React.Fragment>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-auto p-8 border-t border-gray-50 bg-gray-50/50 text-[11px] text-gray-400 leading-relaxed">
+                            <p><strong>创作指南：</strong></p>
+                            <p>1. 填入您的 Worker 地址</p>
+                            <p>2. 点击生成按钮，AI 将调用 DeepSeek 进行创作</p>
+                            <p>3. 预览满意后，点击右侧“发布并复制”</p>
+                        </div>
+                    </div>
+
+                    {/* 预览工作区 */}
+                    <div className="flex-1 bg-slate-100 flex items-center justify-center p-12 overflow-y-auto no-scrollbar relative">
+                        {/* 顶部工具 */}
+                        <div className="absolute top-8 right-12 flex gap-4">
+                            <button 
+                                onClick={copyToWX}
+                                className="px-8 py-3 bg-white text-gray-800 rounded-full font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2 border border-gray-100"
+                            >
+                                <i data-lucide="clipboard-check" className="w-5 h-5 text-green-500"></i>
+                                完美复制到公众号
+                            </button>
+                        </div>
+
+                        {/* 手机预览容器 */}
+                        <div className="phone-mockup shadow-2xl bg-white flex flex-col">
+                            {/* 状态栏模拟 */}
+                            <div className="h-10 w-full flex justify-between items-center px-8 shrink-0">
+                                <span className="text-xs font-bold">9:41</span>
+                                <div className="flex gap-1.5 items-center">
+                                    <div className="w-4 h-2 bg-black/20 rounded-full"></div>
+                                    <div className="w-4 h-4 bg-black rounded-full"></div>
+                                </div>
+                            </div>
+                            
+                            {/* 内容滚动区 */}
+                            <div className="flex-1 overflow-y-auto p-6 no-scrollbar">
+                                <div 
+                                    ref={editorRef}
+                                    contentEditable 
+                                    className="editor-canvas wx-article"
+                                    spellCheck="false"
+                                >
+                                    {/* 这里将由 AI 填充 */}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
