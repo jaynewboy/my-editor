@@ -88,7 +88,6 @@
         // 内置配置
         const CONFIG = {
             WORKER_URL: 'https://ai-editor-api.lukinzpkjstk.workers.dev/',
-            DEFAULT_KEY: '8888' // 默认口令
         };
 
         // 图标组件 (Inline SVG 防止 React DOM 冲突)
@@ -141,7 +140,7 @@
                 setGeneratedTitle(''); 
                 
                 try {
-                    // 时间戳参数确保 API 不被缓存
+                    // 时间戳参数强制让 Worker 跳过缓存生成新内容
                     const timestamp = Date.now();
                     const apiUrl = `${CONFIG.WORKER_URL.replace(/\/$/, '')}/api/generate_article?nocache=${timestamp}`;
                     
@@ -172,11 +171,11 @@
                             </section>
 
                             ${json.data.map((item, idx) => {
-                                // 核心优化：构建极其独特的图片 URL，结合段落索引、时间戳和 AI 关键词
-                                // 使用多图源策略以确保 100% 差异化
+                                // 核心修复：lock 必须是整数才能保证图片唯一性
                                 const imageKeyword = item.keyword.replace(/\s+/g, ',');
-                                const randomSig = `${idx}_${timestamp}_${Math.floor(Math.random() * 1000)}`;
-                                const imgSrc = `https://loremflickr.com/800/450/inspiration,nature,${imageKeyword}/all?lock=${randomSig}`;
+                                // 生成一个纯数字种子
+                                const seed = Math.floor(Math.random() * 1000000) + idx;
+                                const imgSrc = `https://loremflickr.com/800/450/inspiration,nature,${imageKeyword}/all?lock=${seed}`;
                                 
                                 return `
                                     <section style="margin-bottom: 50px; text-align: center;">
@@ -185,12 +184,12 @@
                                             ${item.text.replace(/\n/g, '<br/>')}
                                         </section>
 
-                                        <!-- 配图：16:9 比例，圆角效果，强制不同 -->
+                                        <!-- 配图：16:9 比例，圆角效果 -->
                                         <section style="margin: 30px 0; text-align: center;">
                                             <img src="${imgSrc}" 
                                                  style="width: 100%; max-width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); display: inline-block;" 
                                                  alt="励志配图" 
-                                                 onerror="this.src='https://images.unsplash.com/featured/800x450?nature,${item.keyword}&sig=${randomSig}'" />
+                                                 onerror="this.src='https://images.unsplash.com/featured/800x450?nature,inspiration&sig=${seed}'" />
                                         </section>
                                     </section>
                                 `;
@@ -207,7 +206,7 @@
                     setArticleHtml(html);
                 } catch (e) {
                     console.error(e);
-                    setArticleHtml(`<div style="color: #ef4444; text-align: center; padding: 40px;">⚠️ 接口请求失败，请检查网络或口令。</div>`);
+                    setArticleHtml(`<div style="color: #ef4444; text-align: center; padding: 40px;">⚠️ 接口请求失败，可能是 Worker 响应超时，请重试。</div>`);
                 } finally {
                     setLoading(false);
                 }
@@ -251,7 +250,7 @@
                                         className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all text-center tracking-[0.5em] font-bold"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="••••••"
+                                        placeholder="••••••••"
                                         autoFocus
                                     />
                                 </div>
@@ -316,7 +315,7 @@
                                 ) : (
                                     <div className="flex items-center justify-center gap-2">
                                         <Icon name={articleHtml ? "refresh" : "pen"} className="w-5 h-5" />
-                                        <span>{articleHtml ? "不满意？重新创作" : "开始深度创作"}</span>
+                                        <span>{articleHtml ? "重新创作内容" : "开始深度创作"}</span>
                                     </div>
                                 )}
                             </button>
@@ -370,7 +369,7 @@
                             </button>
                         </div>
 
-                        {/* 模拟手机容器 */}
+                        {/* 手机容器 */}
                         <div className="phone-shell">
                             <div className="h-6 w-full flex justify-center mt-2 shrink-0">
                                 <div className="w-16 h-4 bg-slate-900 rounded-full"></div>
